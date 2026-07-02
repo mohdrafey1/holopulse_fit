@@ -1,6 +1,5 @@
 # HoloPulse Fit: Project Tracker
 
- 
 Status values: Not Started, In Progress, Blocked, Done
 Rule: update this file in the same change set as the work it tracks. One task moves to In Progress at a time per person.
 
@@ -116,6 +115,24 @@ Rule: update this file in the same change set as the work it tracks. One task mo
 | 8 | History saves, displays, and deletes correctly | Not Verified |
 | 9 | Dark neon UI, readable contrast, consistent structure | Not Verified |
 | 10 | All delivery files present | Not Verified |
+
+## Milestone Log
+
+Append-only journal. After each completed milestone or phase, add a dated entry below with: what was built, decisions made, deviations from the docs with reasons, and known issues. Do not edit or delete past entries.
+
+### Entry Template
+
+```
+### YYYY-MM-DD: Phase N complete (or milestone name)
+Built: short summary of what was implemented
+Decisions: choices made that the docs did not already cover
+Deviations: any departure from prd, trd, appflow, design, schema, or rules, with reason
+Known issues: open bugs, rough edges, or follow-up tasks
+```
+
+### Entries
+
+(no entries yet)
 
 ## Blockers Log
 
