@@ -1,0 +1,25 @@
+{
+  "motion_path_id": "sample-motion-path-001",
+  "exercise_name": "squats",
+  "landmark_series": [
+    {
+      "timestamp_ms": 0,
+      "hip_y": 0.45,
+      "knee_y": 0.7,
+      "shoulder_y": 0.25
+    },
+    {
+      "timestamp_ms": 600,
+      "hip_y": 0.58,
+      "knee_y": 0.72,
+      "shoulder_y": 0.34
+    },
+    {
+      "timestamp_ms": 1200,
+      "hip_y": 0.45,
+      "knee_y": 0.7,
+      "shoulder_y": 0.25
+    }
+  ],
+  "replay_label": "sample guide only"
+}
