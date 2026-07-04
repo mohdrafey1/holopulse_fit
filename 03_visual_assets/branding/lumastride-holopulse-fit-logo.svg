@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600">
+<rect width="1200" height="600" fill="#0B1020"/>
+<circle cx="170" cy="290" r="120" fill="none" stroke="#2AE8FF" stroke-width="10" opacity="0.75"/>
+<circle cx="170" cy="290" r="160" fill="none" stroke="#8B5CF6" stroke-width="8" opacity="0.55"/>
+<path d="M85 375 C125 500, 305 500, 345 375" fill="none" stroke="#FF4FD8" stroke-width="8" stroke-linecap="round"/>
+<line x1="95" y1="375" x2="65" y2="435" stroke="#FF4FD8" stroke-width="10" stroke-linecap="round"/>
+<line x1="340" y1="375" x2="370" y2="435" stroke="#FF4FD8" stroke-width="10" stroke-linecap="round"/>
+<line x1="125" y1="290" x2="275" y2="290" stroke="#F8FAFC" stroke-width="18" stroke-linecap="round"/>
+<rect x="75" y="230" width="40" height="120" rx="12" fill="#8B5CF6"/>
+<rect x="115" y="210" width="50" height="160" rx="14" fill="#2AE8FF"/>
+<rect x="275" y="230" width="40" height="120" rx="12" fill="#8B5CF6"/>
+<rect x="225" y="210" width="50" height="160" rx="14" fill="#2AE8FF"/>
+<text x="440" y="250" font-family="Arial" font-size="68" font-weight="700" fill="#F8FAFC">LumaStride</text>
+<text x="440" y="315" font-family="Arial" font-size="40" font-weight="700" fill="#2AE8FF">Technologies</text>
+<text x="440" y="365" font-family="Arial" font-size="26" fill="#94A3B8">HoloPulse Fit brand mark</text>
+</svg>

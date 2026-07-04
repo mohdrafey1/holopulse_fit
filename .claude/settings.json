@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /dev/null -w \"google maven: %{http_code}\\\\n\" --max-time 15 https://dl.google.com/dl/android/maven2/androidx/compose/compose-bom/maven-metadata.xml)",
+      "Bash(curl -s -o /dev/null -w \"maven central: %{http_code}\\\\n\" --max-time 15 https://repo1.maven.org/maven2/)",
+      "Bash(curl -s --max-time 20 \"https://repo1.maven.org/maven2/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/maven-metadata.xml\")",
+      "Bash(curl -s --max-time 20 \"https://repo1.maven.org/maven2/com/airbnb/android/lottie-compose/maven-metadata.xml\")",
+      "Bash(curl -s --max-time 20 \"https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json/maven-metadata.xml\")",
+      "Bash(curl -s --max-time 20 \"https://repo1.maven.org/maven2/org/jetbrains/kotlin/plugin/compose/org.jetbrains.kotlin.plugin.compose.gradle.plugin/maven-metadata.xml\")",
+      "Bash(curl -s --max-time 20 \"https://dl.google.com/dl/android/maven2/androidx/compose/compose-bom/maven-metadata.xml\")",
+      "Bash(./gradlew :app:assembleDebug --stacktrace)",
+      "Bash(echo \"GRADLE_EXIT=$?\")",
+      "Bash(ls -la app/build/outputs/apk/debug/*.apk)"
+    ]
+  }
+}

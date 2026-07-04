@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Only the window background token lives here so there is no white flash on launch.
+         All in-app colors come from the Compose theme tokens (see ui/theme/Color.kt). -->
+    <color name="deep_space_base">#0B1020</color>
 </resources>

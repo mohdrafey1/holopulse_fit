@@ -1,9 +1,10 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.HoloPulse_Fit" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+<resources>
+    <!-- HoloPulse Fit is a Compose only, always dark neon app. The XML theme only needs to
+         provide a NoActionBar window and the deep space background to avoid a launch flash.
+         All real theming happens in Compose (ui/theme). -->
+    <style name="Theme.HoloPulse_Fit" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/deep_space_base</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
-
-    <style name="Theme.HoloPulse_Fit" parent="Base.Theme.HoloPulse_Fit" />
 </resources>

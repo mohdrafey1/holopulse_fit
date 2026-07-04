@@ -1,0 +1,20 @@
+[
+  {
+    "session_id": "sample-session-001",
+    "date": "2026-06-13",
+    "exercise_type": "squats",
+    "duration_seconds": 180,
+    "reps": 20,
+    "calories_estimate": 35,
+    "completed_status": "completed"
+  },
+  {
+    "session_id": "sample-session-002",
+    "date": "2026-06-13",
+    "exercise_type": "jumping_jacks",
+    "duration_seconds": 120,
+    "reps": 30,
+    "calories_estimate": 40,
+    "completed_status": "completed"
+  }
+]
