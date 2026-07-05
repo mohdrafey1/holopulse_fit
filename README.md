@@ -18,7 +18,8 @@ Built for LumaStride Technologies as a motion first, dark neon home workout tool
 7. AI Ghost Trainer that replays a saved or sample motion path as a semi transparent guide, with a timing and similarity cue and a persistent guidance only label.
 8. Local workout history with detail view, single delete, and clear all, plus streak and calorie tracking.
 9. Settings for camera permission guidance, aura intensity, reduced effects, ghost trainer toggle, history management, and privacy notes.
-10. Privacy first: all processing is on device and no raw camera video or frames are ever stored.
+10. A How it works guide, opened from Settings, that explains the gestures, rep counting, Aura Energy, and Ghost Trainer.
+11. Privacy first: all processing is on device and no raw camera video or frames are ever stored.
 
 ## Architecture
 

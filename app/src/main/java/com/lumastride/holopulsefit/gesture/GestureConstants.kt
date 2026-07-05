@@ -25,7 +25,17 @@ object GestureConstants {
     const val SWIPE_WINDOW_MS = 550L
 
     /** Minimum normalized horizontal wrist displacement for a swipe. */
-    const val SWIPE_MIN_DX = 0.18f
+    const val SWIPE_MIN_DX = 0.22f
+
+    /**
+     * A swipe only counts when the wrist is within this vertical distance of the shoulder, i.e. the
+     * arm is held out to the side at shoulder height. This excludes squats (hands low) and jumping
+     * jacks (hands overhead), where accidental horizontal motion would otherwise look like a swipe.
+     */
+    const val SWIPE_HEIGHT_BAND = 0.22f
+
+    /** A swipe must be mostly horizontal: vertical travel below this fraction of horizontal travel. */
+    const val SWIPE_MAX_VERTICAL_RATIO = 0.6f
 }
 
 /** The four gestures the engine recognizes (PRD section 7). */

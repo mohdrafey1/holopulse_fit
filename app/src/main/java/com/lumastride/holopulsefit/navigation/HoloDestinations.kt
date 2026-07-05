@@ -10,6 +10,7 @@ object HoloDestinations {
     const val LIBRARY = "library"
     const val HISTORY = "history"
     const val SETTINGS = "settings"
+    const val GUIDE = "guide"
 
     const val ARG_EXERCISE_TYPE = "exerciseType"
     const val ARG_SESSION_ID = "sessionId"

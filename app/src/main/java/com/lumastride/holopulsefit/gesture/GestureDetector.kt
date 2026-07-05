@@ -21,7 +21,7 @@ class GestureDetector {
     private var bothHandsStartMs: Long? = null
     private var bothHandsLatched = false
     private var lastFireMs = -GestureConstants.DEBOUNCE_MS
-    private val swipeHistory = ArrayDeque<Pair<Long, Float>>()
+    private val swipeHistory = ArrayDeque<SwipeSample>()
 
     /** Feeds one frame; returns a gesture when one fires, otherwise null. */
     fun onFrame(frame: PoseFrame): GestureType? {
@@ -86,34 +86,47 @@ class GestureDetector {
             handRaiseLatched = false
         }
 
-        // Neither hand raised: look for a directional side swipe of the right wrist.
-        return detectSwipe(t, rightWrist.x)
+        // Neither hand raised: look for a deliberate sideways sweep of the right wrist held at
+        // shoulder height. The shoulder height reference excludes exercise arm motion.
+        val shoulderY = (leftShoulder.y + rightShoulder.y) / 2f
+        return detectSwipe(t, rightWrist.x, rightWrist.y, shoulderY)
     }
 
-    private fun detectSwipe(t: Long, x: Float): GestureType? {
-        swipeHistory.addLast(t to x)
-        while (swipeHistory.isNotEmpty() && t - swipeHistory.first().first > GestureConstants.SWIPE_WINDOW_MS) {
+    private fun detectSwipe(t: Long, x: Float, y: Float, shoulderY: Float): GestureType? {
+        // Only a hand held out near shoulder height counts, so squats and jumping jacks are ignored.
+        if (abs(y - shoulderY) > GestureConstants.SWIPE_HEIGHT_BAND) {
+            swipeHistory.clear()
+            return null
+        }
+
+        swipeHistory.addLast(SwipeSample(t, x, y))
+        while (swipeHistory.isNotEmpty() && t - swipeHistory.first().t > GestureConstants.SWIPE_WINDOW_MS) {
             swipeHistory.removeFirst()
         }
         if (swipeHistory.size < 3 || !canFire(t)) return null
 
-        val startX = swipeHistory.first().second
-        val dx = x - startX
+        val start = swipeHistory.first()
+        val dx = x - start.x
+        val dy = y - start.y
         if (abs(dx) < GestureConstants.SWIPE_MIN_DX) return null
+        // Reject exercise motion that is not predominantly horizontal.
+        if (abs(dy) > abs(dx) * GestureConstants.SWIPE_MAX_VERTICAL_RATIO) return null
 
-        // Require a consistent direction across the window to reject jitter.
+        // Require a consistent horizontal direction across the window to reject jitter.
         val direction = sign(dx)
-        var previous = startX
-        for ((_, sampleX) in swipeHistory.drop(1)) {
-            val step = sampleX - previous
+        var previous = start.x
+        for (sample in swipeHistory.drop(1)) {
+            val step = sample.x - previous
             if (sign(step) == -direction && abs(step) > 0.02f) return null
-            previous = sampleX
+            previous = sample.x
         }
 
         lastFireMs = t
         swipeHistory.clear()
         return if (dx > 0f) GestureType.SWIPE_RIGHT else GestureType.SWIPE_LEFT
     }
+
+    private data class SwipeSample(val t: Long, val x: Float, val y: Float)
 
     private fun canFire(t: Long): Boolean = t - lastFireMs >= GestureConstants.DEBOUNCE_MS
 

@@ -53,6 +53,8 @@ data class WorkoutUiState(
     val countdown: Int,
     val reps: Int,
     val targetReps: Int,
+    /** Reps completed earlier in this session under previous exercises (before a swipe switch). */
+    val previousReps: Int = 0,
     val elapsedSeconds: Int,
     val stateText: String,
     val nextActionHint: String,
@@ -112,6 +114,19 @@ class WorkoutViewModel(
     private var timerJob: Job? = null
     private var feedbackJob: Job? = null
     private var finished = false
+
+    /** One exercise segment performed within this session (schema supports many sets per session). */
+    private data class PerformedExercise(
+        val exercise: ExerciseType,
+        val reps: Int,
+        val confidenceAverage: Float,
+        val durationSeconds: Int,
+        val targetReps: Int,
+    )
+
+    private val performedSets = mutableListOf<PerformedExercise>()
+    private var accumulatedReps = 0
+    private var segmentStartElapsed = 0
 
     /** The active rep counter for the current exercise. Exposed for the summary save. */
     var counter = RepCounterFactory.create(exercise)
@@ -297,6 +312,10 @@ class WorkoutViewModel(
      */
     private fun switchExercise(target: ExerciseType) {
         if (finished || target == exercise) return
+        // Preserve the reps done under the current exercise before switching, so the session
+        // remembers everything performed (the on screen counter still resets for the new exercise).
+        recordCurrentSegment()
+
         exercise = target
         targetReps = target.defaultTargetReps
         counter = RepCounterFactory.create(target)
@@ -315,6 +334,7 @@ class WorkoutViewModel(
                 phase = if (it.phase == WorkoutPhase.PAUSED) WorkoutPhase.PAUSED else WorkoutPhase.TRACKING,
                 reps = 0,
                 targetReps = target.defaultTargetReps,
+                previousReps = accumulatedReps,
                 stateText = "Switched to ${target.displayName}",
                 nextActionHint = nextActionHint(target),
                 guidanceMessage = null,
@@ -322,6 +342,24 @@ class WorkoutViewModel(
                 similarity = 0f,
             )
         }
+    }
+
+    /** Records the current exercise segment (only if reps were counted) and advances the timing. */
+    private fun recordCurrentSegment() {
+        val elapsed = _uiState.value.elapsedSeconds
+        if (counter.reps > 0) {
+            performedSets.add(
+                PerformedExercise(
+                    exercise = exercise,
+                    reps = counter.reps,
+                    confidenceAverage = counter.confidenceAverage,
+                    durationSeconds = (elapsed - segmentStartElapsed).coerceAtLeast(0),
+                    targetReps = targetReps,
+                ),
+            )
+            accumulatedReps += counter.reps
+        }
+        segmentStartElapsed = elapsed
     }
 
     /** Touch fallback for the both hands hold pause gesture (rules.md section 4.5). */
@@ -355,36 +393,48 @@ class WorkoutViewModel(
 
         viewModelScope.launch {
             val snapshot = _uiState.value
+            // Finalize the current exercise segment. If nothing was counted all session, still
+            // record the current exercise so the session saves a row.
+            recordCurrentSegment()
+            val segments = performedSets.ifEmpty {
+                listOf(
+                    PerformedExercise(exercise, counter.reps, counter.confidenceAverage, snapshot.elapsedSeconds, targetReps),
+                )
+            }
+
             val sessionId = UUID.randomUUID().toString()
-            val calories = CalorieEstimator.estimate(
-                metFactor = exercise.metFactor,
-                durationSeconds = snapshot.elapsedSeconds,
-                reps = counter.reps,
-            )
+            val totalReps = segments.sumOf { it.reps }
+            val totalCalories = segments.sumOf {
+                CalorieEstimator.estimate(it.exercise.metFactor, it.durationSeconds, it.reps)
+            }
+            // The session is tagged with the exercise that contributed the most reps.
+            val primary = segments.maxByOrNull { it.reps }?.exercise ?: exercise
             val completedStatus =
-                if (counter.reps > 0 && counter.reps >= targetReps) WorkoutSession.STATUS_COMPLETED
+                if (totalReps > 0 && segments.any { it.reps >= it.targetReps }) WorkoutSession.STATUS_COMPLETED
                 else WorkoutSession.STATUS_STOPPED_EARLY
 
             val session = WorkoutSession(
                 id = sessionId,
                 date = TimeFormat.todayIso(),
                 duration = snapshot.elapsedSeconds,
-                totalReps = counter.reps,
-                exerciseType = exercise.id,
-                caloriesEstimate = calories,
+                totalReps = totalReps,
+                exerciseType = primary.id,
+                caloriesEstimate = totalCalories,
                 completedStatus = completedStatus,
             )
-            val exerciseSet = ExerciseSet(
-                id = UUID.randomUUID().toString(),
-                sessionId = sessionId,
-                exerciseName = exercise.displayName,
-                targetReps = targetReps,
-                countedReps = counter.reps,
-                confidenceAverage = counter.confidenceAverage,
-            )
+            val exerciseSets = segments.map { segment ->
+                ExerciseSet(
+                    id = UUID.randomUUID().toString(),
+                    sessionId = sessionId,
+                    exerciseName = segment.exercise.displayName,
+                    targetReps = segment.targetReps,
+                    countedReps = segment.reps,
+                    confidenceAverage = segment.confidenceAverage,
+                )
+            }
             repository.saveSession(
                 session = session,
-                exerciseSet = exerciseSet,
+                exerciseSets = exerciseSets,
                 motionFrames = recorder.build(),
                 replayLabel = GHOST_REPLAY_LABEL,
             )

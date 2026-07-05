@@ -114,7 +114,10 @@ class HoloRepository(
         val session = sessionDao.getById(id) ?: return null
         val sets = setDao.getBySessionId(id)
         val paths = motionDao.getBySessionId(id)
-        return SessionDetail(session, sets.firstOrNull(), paths.isNotEmpty())
+        // Prefer the set for the session's primary exercise so the summary confidence matches it.
+        val primaryName = ExerciseType.fromId(session.exerciseType).displayName
+        val primarySet = sets.firstOrNull { it.exerciseName == primaryName } ?: sets.firstOrNull()
+        return SessionDetail(session, primarySet, paths.isNotEmpty())
     }
 
     /**
@@ -123,12 +126,12 @@ class HoloRepository(
      */
     suspend fun saveSession(
         session: WorkoutSession,
-        exerciseSet: ExerciseSet,
+        exerciseSets: List<ExerciseSet>,
         motionFrames: List<MotionFrame>,
         replayLabel: String,
     ) {
         sessionDao.insert(session)
-        setDao.insert(exerciseSet)
+        exerciseSets.forEach { setDao.insert(it) }
         if (motionFrames.isNotEmpty()) {
             motionDao.insert(
                 MotionPath(

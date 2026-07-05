@@ -102,6 +102,32 @@ class GestureDetectorTest {
     }
 
     @Test
+    fun lowHandHorizontalMovementDoesNotSwipe() {
+        val detector = GestureDetector()
+        // Hands low near the hips (like a squat), sweeping sideways: out of the shoulder height band.
+        val frames = listOf(
+            gestureFrame(0L, 0.60f, 0.60f, rightWristX = 0.40f),
+            gestureFrame(120L, 0.60f, 0.60f, rightWristX = 0.52f),
+            gestureFrame(240L, 0.60f, 0.60f, rightWristX = 0.62f),
+            gestureFrame(360L, 0.60f, 0.60f, rightWristX = 0.70f),
+        )
+        assertTrue(collect(detector, frames).isEmpty())
+    }
+
+    @Test
+    fun verticalDominantMovementDoesNotSwipe() {
+        val detector = GestureDetector()
+        // Diagonal motion where the vertical travel dominates: not a deliberate horizontal sweep.
+        val frames = listOf(
+            gestureFrame(0L, 0.50f, 0.30f, rightWristX = 0.44f),
+            gestureFrame(120L, 0.50f, 0.37f, rightWristX = 0.53f),
+            gestureFrame(240L, 0.50f, 0.44f, rightWristX = 0.60f),
+            gestureFrame(360L, 0.50f, 0.50f, rightWristX = 0.68f),
+        )
+        assertTrue(collect(detector, frames).isEmpty())
+    }
+
+    @Test
     fun jitteryWristDoesNotSwipe() {
         val detector = GestureDetector()
         // Small back and forth movement below the swipe threshold.

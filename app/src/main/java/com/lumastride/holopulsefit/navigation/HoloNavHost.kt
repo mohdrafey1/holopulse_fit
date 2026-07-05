@@ -41,6 +41,7 @@ import com.lumastride.holopulsefit.data.ExerciseType
 import com.lumastride.holopulsefit.ui.components.HoloTopBar
 import com.lumastride.holopulsefit.ui.screens.DashboardScreen
 import com.lumastride.holopulsefit.ui.screens.GhostTrainerScreen
+import com.lumastride.holopulsefit.ui.screens.GuideScreen
 import com.lumastride.holopulsefit.ui.screens.HistoryDetailScreen
 import com.lumastride.holopulsefit.ui.screens.HistoryScreen
 import com.lumastride.holopulsefit.ui.screens.LaunchScreen
@@ -199,9 +200,16 @@ private fun HoloNavHost(navController: NavHostController, modifier: Modifier = M
                         )
                         context.startActivity(intent)
                     },
+                    onOpenGuide = { navController.navigate(HoloDestinations.GUIDE) },
                     onClearHistory = vm::clearHistory,
                     modifier = it,
                 )
+            }
+        }
+
+        composable(HoloDestinations.GUIDE) {
+            ScreenScaffold(title = "How it works", onBack = { navController.popBackStack() }) { modifier ->
+                GuideScreen(modifier = modifier)
             }
         }
 

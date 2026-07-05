@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -54,6 +55,7 @@ fun SettingsScreen(
     onReducedEffectsChange: (Boolean) -> Unit,
     onGhostTrainerChange: (Boolean) -> Unit,
     onOpenPermissionSettings: () -> Unit,
+    onOpenGuide: () -> Unit,
     onClearHistory: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -67,6 +69,29 @@ fun SettingsScreen(
             .padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        // How it works guide.
+        GlowCard(glowColor = CyanPulse, modifier = Modifier.fillMaxWidth(), onClick = onOpenGuide) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.padding(end = 12.dp)) {
+                    SectionTitle("How HoloPulse Fit works")
+                    Text(
+                        text = "Gestures, rep counting, Aura, and Ghost Trainer explained",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = null,
+                    tint = CyanPulse,
+                )
+            }
+        }
+
         // Camera permission.
         GlowCard(glowColor = ElectricBlueGlow, modifier = Modifier.fillMaxWidth()) {
             SectionTitle("Camera Permission")

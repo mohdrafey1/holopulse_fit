@@ -105,14 +105,28 @@ fun WorkoutScreen(
                     .padding(12.dp),
             )
 
-            // Rep counter, anchored top end away from the body center.
+            // Rep counter, anchored top end away from the body center. A session total appears once
+            // reps have carried over from an earlier exercise in the same session.
             if (state.phase != WorkoutPhase.COUNTDOWN) {
-                Box(
+                Column(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(top = 64.dp, end = 20.dp),
+                    horizontalAlignment = Alignment.End,
                 ) {
                     RepCounter(count = state.reps, target = state.targetReps)
+                    if (state.previousReps > 0) {
+                        Text(
+                            text = "Session ${state.previousReps + state.reps}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = CyanPulse,
+                            modifier = Modifier
+                                .padding(top = 4.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(ScrimDark)
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                        )
+                    }
                 }
             }
 
