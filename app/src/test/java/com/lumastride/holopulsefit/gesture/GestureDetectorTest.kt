@@ -53,15 +53,29 @@ class GestureDetectorTest {
     fun bothHandsTogglesOncePerHoldCycle() {
         val detector = GestureDetector()
         val frames = mutableListOf<PoseFrame>()
-        // Hold both hands up from 0 to 1200 ms.
+        // Hold both hands up from 0 to 1200 ms (first fire around 1000 ms).
         for (t in 0..1200 step 100) frames += gestureFrame(t.toLong(), 0.10f, 0.10f)
         // Release (hands down) 1300 to 1500.
         for (t in 1300..1500 step 100) frames += gestureFrame(t.toLong(), 0.50f, 0.50f)
-        // Hold both hands again from 1600 to 2800 ms.
-        for (t in 1600..2800 step 100) frames += gestureFrame(t.toLong(), 0.10f, 0.10f)
+        // Hold both hands again after the cooldown, from 4600 to 5800 ms (second fire around 5600).
+        for (t in 4600..5800 step 100) frames += gestureFrame(t.toLong(), 0.10f, 0.10f)
 
         val events = collect(detector, frames)
         assertEquals(listOf(GestureType.BOTH_HANDS_HOLD, GestureType.BOTH_HANDS_HOLD), events)
+    }
+
+    @Test
+    fun secondGestureWithinCooldownIsBlocked() {
+        val detector = GestureDetector()
+        val frames = mutableListOf<PoseFrame>()
+        // First hold fires around 1000 ms.
+        for (t in 0..1200 step 100) frames += gestureFrame(t.toLong(), 0.10f, 0.10f)
+        for (t in 1300..1500 step 100) frames += gestureFrame(t.toLong(), 0.50f, 0.50f)
+        // Second hold completes at ~2600 ms, within the 3 second cooldown, so it must not fire.
+        for (t in 1600..2700 step 100) frames += gestureFrame(t.toLong(), 0.10f, 0.10f)
+
+        val events = collect(detector, frames)
+        assertEquals(listOf(GestureType.BOTH_HANDS_HOLD), events)
     }
 
     @Test

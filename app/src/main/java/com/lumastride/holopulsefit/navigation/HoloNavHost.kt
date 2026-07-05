@@ -214,16 +214,10 @@ private fun HoloNavHost(navController: NavHostController, modifier: Modifier = M
                     defaultValue = -1
                 },
             ),
-        ) { entry ->
-            val exercise = ExerciseType.fromId(entry.arguments?.getString(HoloDestinations.ARG_EXERCISE_TYPE))
+        ) {
             val vm: WorkoutViewModel = viewModel(factory = WorkoutViewModel.Factory)
             val state by vm.uiState.collectAsStateWithLifecycle()
 
-            val goToWorkout: (ExerciseType) -> Unit = { target ->
-                navController.navigate(HoloDestinations.Workout.build(target.id)) {
-                    popUpTo(HoloDestinations.Workout.ROUTE) { inclusive = true }
-                }
-            }
             val finishToSummary: () -> Unit = {
                 vm.stop { sessionId ->
                     navController.navigate(HoloDestinations.Summary.build(sessionId)) {
@@ -232,18 +226,18 @@ private fun HoloNavHost(navController: NavHostController, modifier: Modifier = M
                 }
             }
 
-            // Touchless gestures that require navigation are collected here.
+            // The only gesture that needs navigation is the hand raise finish; exercise switching
+            // happens in place inside the ViewModel.
             LaunchedEffect(vm) {
                 vm.gestures.collect { gesture ->
                     when (gesture) {
                         WorkoutGesture.FINISH -> finishToSummary()
-                        WorkoutGesture.NEXT_EXERCISE -> goToWorkout(exercise.next())
-                        WorkoutGesture.PREV_EXERCISE -> goToWorkout(exercise.previous())
                     }
                 }
             }
 
-            ScreenScaffold(title = exercise.displayName, onBack = { navController.popBackStack() }) {
+            // The title follows the current exercise, which can change in place.
+            ScreenScaffold(title = state.exercise.displayName, onBack = { navController.popBackStack() }) {
                 WorkoutScreen(
                     state = state,
                     poseFrames = vm.poseFrame,
@@ -251,8 +245,8 @@ private fun HoloNavHost(navController: NavHostController, modifier: Modifier = M
                     onPoseFrame = vm::onPoseFrame,
                     onTogglePause = vm::togglePause,
                     onStop = finishToSummary,
-                    onNextExercise = { goToWorkout(exercise.next()) },
-                    onPrevExercise = { goToWorkout(exercise.previous()) },
+                    onNextExercise = vm::switchToNext,
+                    onPrevExercise = vm::switchToPrevious,
                     onPermissionState = vm::setPermissionState,
                     modifier = it,
                 )

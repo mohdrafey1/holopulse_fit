@@ -1,5 +1,8 @@
 package com.lumastride.holopulsefit.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,9 +12,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BackHand
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.PanTool
@@ -45,6 +50,7 @@ import com.lumastride.holopulsefit.ui.components.GestureHintBar
 import com.lumastride.holopulsefit.ui.components.GhostSkeleton
 import com.lumastride.holopulsefit.ui.components.GuidanceBanner
 import com.lumastride.holopulsefit.ui.components.PoseOverlay
+import com.lumastride.holopulsefit.ui.components.neonGlow
 import com.lumastride.holopulsefit.ui.components.ProgressRing
 import com.lumastride.holopulsefit.ui.components.RepCounter
 import com.lumastride.holopulsefit.ui.theme.CyanPulse
@@ -109,6 +115,14 @@ fun WorkoutScreen(
                     RepCounter(count = state.reps, target = state.targetReps)
                 }
             }
+
+            // Brief confirmation that a gesture registered (and is in its cooldown).
+            GestureFeedbackPill(
+                text = state.gestureFeedback,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 72.dp),
+            )
 
             // Countdown ring while the user steps into frame.
             if (state.phase == WorkoutPhase.COUNTDOWN) {
@@ -198,6 +212,39 @@ fun WorkoutScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+/** A short lived glowing pill confirming the gesture that just fired. */
+@Composable
+private fun GestureFeedbackPill(text: String?, modifier: Modifier = Modifier) {
+    AnimatedVisibility(
+        visible = text != null,
+        enter = fadeIn(),
+        exit = fadeOut(),
+        modifier = modifier,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier
+                .neonGlow(glowColor = ElectricBlueGlow, cornerRadius = 20.dp, glowRadius = 10.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(ScrimDark)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.CheckCircle,
+                contentDescription = null,
+                tint = ElectricBlueGlow,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                text = text.orEmpty(),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
         }
     }
 }

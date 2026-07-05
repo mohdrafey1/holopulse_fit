@@ -40,8 +40,11 @@ import kotlinx.coroutines.launch
 /** Phases of a camera workout session (appflow.md section 6). */
 enum class WorkoutPhase { COUNTDOWN, TRACKING, GUIDANCE, PAUSED, COMPLETE }
 
-/** Screen level actions produced by touchless gestures that require navigation. */
-enum class WorkoutGesture { FINISH, NEXT_EXERCISE, PREV_EXERCISE }
+/**
+ * Screen level action produced by a touchless gesture that requires navigation. Exercise switching
+ * is handled in place inside the ViewModel and does not appear here.
+ */
+enum class WorkoutGesture { FINISH }
 
 /** Immutable state driving the camera workout screen. */
 data class WorkoutUiState(
@@ -61,6 +64,8 @@ data class WorkoutUiState(
     val ghostEnabled: Boolean = false,
     /** 0..1 match against the Ghost Trainer guide, shown when the in workout ghost is enabled. */
     val similarity: Float = 0f,
+    /** Short confirmation of the gesture that just fired, shown briefly during the cooldown. */
+    val gestureFeedback: String? = null,
 )
 
 /**
@@ -74,10 +79,12 @@ class WorkoutViewModel(
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private val exercise: ExerciseType =
+    // Exercise and target can change in place when the user switches exercises mid session, so the
+    // camera, ViewModel, and gesture detector are never torn down (which would drop the debounce).
+    private var exercise: ExerciseType =
         ExerciseType.fromId(savedStateHandle[HoloDestinations.ARG_EXERCISE_TYPE])
 
-    private val targetReps: Int = run {
+    private var targetReps: Int = run {
         val requested = savedStateHandle.get<Int>(HoloDestinations.ARG_TARGET) ?: -1
         if (requested > 0) requested else exercise.defaultTargetReps
     }
@@ -103,10 +110,12 @@ class WorkoutViewModel(
     val poseFrame: StateFlow<PoseFrame> = _poseFrame.asStateFlow()
 
     private var timerJob: Job? = null
+    private var feedbackJob: Job? = null
     private var finished = false
 
-    /** The active rep counter for this exercise. Exposed for the summary save in Phase 7. */
-    val counter = RepCounterFactory.create(exercise)
+    /** The active rep counter for the current exercise. Exposed for the summary save. */
+    var counter = RepCounterFactory.create(exercise)
+        private set
 
     private val gestureDetector = GestureDetector()
     private val recorder = MotionRecorder()
@@ -241,13 +250,77 @@ class WorkoutViewModel(
     /** The recorded, downsampled motion frames for saving on session end (Phase 7). */
     fun recordedFrames(): List<MotionFrame> = recorder.build()
 
-    /** Maps a detected gesture to its action: both hands toggles pause, the rest need navigation. */
+    /**
+     * Maps a detected gesture to its action. Both hands toggles pause, a swipe switches exercise in
+     * place (keeping the same detector so its debounce prevents an immediate re-trigger), and a hand
+     * raise finishes the session, which needs navigation and is sent to the screen.
+     */
     private fun dispatchGesture(gesture: GestureType) {
         when (gesture) {
-            GestureType.BOTH_HANDS_HOLD -> togglePause()
-            GestureType.HAND_RAISE -> _gestures.trySend(WorkoutGesture.FINISH)
-            GestureType.SWIPE_RIGHT -> _gestures.trySend(WorkoutGesture.NEXT_EXERCISE)
-            GestureType.SWIPE_LEFT -> _gestures.trySend(WorkoutGesture.PREV_EXERCISE)
+            GestureType.BOTH_HANDS_HOLD -> {
+                togglePause()
+                val paused = _uiState.value.phase == WorkoutPhase.PAUSED
+                showGestureFeedback(if (paused) "Paused" else "Resumed")
+            }
+            GestureType.HAND_RAISE -> {
+                showGestureFeedback("Finishing")
+                _gestures.trySend(WorkoutGesture.FINISH)
+            }
+            GestureType.SWIPE_RIGHT -> {
+                switchToNext()
+                showGestureFeedback("Next: ${exercise.displayName}")
+            }
+            GestureType.SWIPE_LEFT -> {
+                switchToPrevious()
+                showGestureFeedback("Previous: ${exercise.displayName}")
+            }
+        }
+    }
+
+    /** Briefly surfaces a confirmation that a gesture fired, then clears it during the cooldown. */
+    private fun showGestureFeedback(text: String) {
+        feedbackJob?.cancel()
+        _uiState.update { it.copy(gestureFeedback = text) }
+        feedbackJob = viewModelScope.launch {
+            delay(GESTURE_FEEDBACK_MS)
+            _uiState.update { it.copy(gestureFeedback = null) }
+        }
+    }
+
+    fun switchToNext() = switchExercise(exercise.next())
+    fun switchToPrevious() = switchExercise(exercise.previous())
+
+    /**
+     * Switches the tracked exercise without leaving the screen: swaps the counter, resets the rep
+     * count and motion recording, reloads the ghost guide, and resumes tracking immediately. The
+     * camera and gesture detector are untouched so tracking stays live and the swipe debounce holds.
+     */
+    private fun switchExercise(target: ExerciseType) {
+        if (finished || target == exercise) return
+        exercise = target
+        targetReps = target.defaultTargetReps
+        counter = RepCounterFactory.create(target)
+        recorder.reset()
+        ghostPlayhead = 0L
+        ghostFrames = emptyList()
+        _ghostFrame.value = emptyMap()
+        viewModelScope.launch {
+            if (_uiState.value.ghostEnabled) {
+                ghostFrames = repository.loadReplaySource(target.id).frames
+            }
+        }
+        _uiState.update {
+            it.copy(
+                exercise = target,
+                phase = if (it.phase == WorkoutPhase.PAUSED) WorkoutPhase.PAUSED else WorkoutPhase.TRACKING,
+                reps = 0,
+                targetReps = target.defaultTargetReps,
+                stateText = "Switched to ${target.displayName}",
+                nextActionHint = nextActionHint(target),
+                guidanceMessage = null,
+                estimated = target.approximate,
+                similarity = 0f,
+            )
         }
     }
 
@@ -328,6 +401,7 @@ class WorkoutViewModel(
     companion object {
         private const val COUNTDOWN_SECONDS = 5
         private const val GHOST_TICK_MS = 40L
+        private const val GESTURE_FEEDBACK_MS = 2200L
         private const val GHOST_REPLAY_LABEL =
             "Guidance only. A movement guide, not medical or professional fitness correction."
 

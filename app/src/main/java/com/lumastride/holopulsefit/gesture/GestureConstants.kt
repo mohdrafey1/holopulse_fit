@@ -15,8 +15,11 @@ object GestureConstants {
     /** Stable hold before both hands toggles pause or resume (TRD section 5). */
     const val BOTH_HANDS_HOLD_MS = 1000L
 
-    /** Minimum gap between any two fired gestures, avoiding bursts. */
-    const val DEBOUNCE_MS = 900L
+    /**
+     * Cooldown after any fired gesture before another can fire. A generous window keeps control
+     * deliberate and prevents a single slow motion from triggering twice.
+     */
+    const val DEBOUNCE_MS = 3000L
 
     /** Time window over which a side swipe displacement is measured. */
     const val SWIPE_WINDOW_MS = 550L
