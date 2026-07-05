@@ -214,14 +214,16 @@ class WorkoutViewModel(
      */
     fun onPoseFrame(frame: PoseFrame) {
         _poseFrame.value = frame
-        val current = _uiState.value
-        if (current.phase == WorkoutPhase.COUNTDOWN || current.phase == WorkoutPhase.COMPLETE) return
+        val initialPhase = _uiState.value.phase
+        if (initialPhase == WorkoutPhase.COUNTDOWN || initialPhase == WorkoutPhase.COMPLETE) return
 
         // Touchless gestures are available while tracking, in guidance, and while paused (to resume).
         gestureDetector.onFrame(frame)?.let(::dispatchGesture)
 
-        // Counting and the confidence gate only run while actively tracking.
-        if (current.phase == WorkoutPhase.PAUSED) return
+        // Re-read the phase: a gesture may have just paused or finished the session on this frame.
+        // Counting and the confidence gate only run while actively tracking, never while paused.
+        val phase = _uiState.value.phase
+        if (phase != WorkoutPhase.TRACKING && phase != WorkoutPhase.GUIDANCE) return
 
         val confidence = frame.averageLikelihood
         val tracked = !frame.isEmpty && confidence >= PoseConfidence.TRACKING_GATE
